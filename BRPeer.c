@@ -428,6 +428,21 @@ static int _BRPeerAcceptTxMessage(BRPeer *peer, const uint8_t *msg, size_t msgLe
         r = 0;
     }
     else {
+        size_t tryLen = BRTransactionSerialize(tx, NULL, 0);
+        uint8_t try[tryLen];
+        BRTransactionSerialize(tx, try, tryLen);
+        if (tryLen != msgLen || 0 != memcmp (try, msg, msgLen)) {
+            peer_log (peer, "parse/serialize mismatch");
+
+            char msgHex[msgLen*2 + 1];
+            for (size_t j = 0; j < msgLen; j++) {
+                sprintf(&msgHex[j*2], "%02x", msg[j]);
+            }
+            msgHex[msgLen*2] = '\0';
+            peer_log(peer, "mismatch tx msg : %s", msgHex);
+            return 0;
+        }
+
         txHash = tx->txHash;
         peer_log(peer, "got tx: %s", u256hex(txHash));
 
